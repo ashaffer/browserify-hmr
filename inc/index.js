@@ -612,7 +612,7 @@ function main(
           },
           unaccepted: function(cb) {
             localHmr.unacceptedHandlers.push(cb)
-          }
+          },
           data: runtimeModuleInfo[name].disposeData,
           dispose: function(cb) {
             return this.addDisposeHandler(cb);
