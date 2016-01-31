@@ -264,6 +264,7 @@ function main(
           cb(new Error("Some updates were declined"));
           return;
         }
+      }
       var an;
       for (i=0, len=acceptedUpdates.length; i<len; i++) {
         an = acceptedUpdates[i];
