@@ -147,7 +147,7 @@ module.exports = function(bundle, opts) {
     }
     return runServer().then(function() {
       var newModuleData = _.chain(moduleData)
-        .toPairs()
+        .pairs()
         .filter(function(pair) {
           return pair[1].isNew;
         })
