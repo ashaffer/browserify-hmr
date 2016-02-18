@@ -242,6 +242,7 @@ function main(
         if (has(runtimeModuleInfo, name)) {
           if (
             runtimeModuleInfo[name].decliners.some(isValueNotInOutdatedModules) ||
+            runtimeModuleInfo[name].selfDeclining ||
             (
               runtimeModuleInfo[name].accepters.size() === 0 &&
               runtimeModuleInfo[name].selfAcceptCbs.length === 0 &&
@@ -253,10 +254,16 @@ function main(
         }
         return true;
       });
-      if (!ignoreUnaccepted && outdatedModules.length !== acceptedUpdates.length) {
-        localHmr.setStatus('idle');
-        cb(new Error("Some updates were declined"));
-        return;
+      if (outdatedModules.length !== acceptedUpdates.length) {
+        localHmr.unacceptedHandlers.forEach(function (cb) {
+          cb()
+        });
+
+        if (!ignoreUnaccepted) {
+          localHmr.setStatus('idle');
+          cb(new Error("Some updates were declined"));
+          return;
+        }
       }
       var an;
       for (i=0, len=acceptedUpdates.length; i<len; i++) {
@@ -291,6 +298,7 @@ function main(
             decliners: new StrSet(),
             declining: new StrSet(),
             selfAcceptCbs: [],
+            selfDeclining: false,
             disposeHandlers: []
           };
         } else if (!has(localHmr.newLoad.moduleMeta, an)) {
@@ -545,6 +553,7 @@ function main(
       },
       statusHandlers: [],
       updateHandlers: [],
+      unacceptedHandlers: [],
 
       // during a reload this is set to an object with moduleDefs,
       // moduleMeta, and moduleIndexesToNames properties
@@ -586,8 +595,7 @@ function main(
           },
           decline: function(deps) {
             if (!deps) { // self
-              runtimeModuleInfo[name].decliners.add(name);
-              runtimeModuleInfo[name].declining.add(name);
+              runtimeModuleInfo[name].selfDeclining = true
             } else {
               if (typeof deps === 'string') {
                 deps = [deps];
@@ -603,6 +611,9 @@ function main(
               }
             }
           },
+          unaccepted: function(cb) {
+            localHmr.unacceptedHandlers.push(cb)
+          },
           data: runtimeModuleInfo[name].disposeData,
           dispose: function(cb) {
             return this.addDisposeHandler(cb);
@@ -616,7 +627,6 @@ function main(
               runtimeModuleInfo[name].disposeHandlers.splice(ix, 1);
             }
           },
-
           // Management
           check: moduleHotCheck,
           apply: moduleHotApply,
