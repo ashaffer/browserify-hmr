@@ -23,7 +23,7 @@ var runServer = _.once(function() {
     socket.on('sync', function(syncMsg) {
       log('User connected, syncing');
       var newModuleData = _.chain(currentModuleData)
-        .pairs()
+        .toPairs()
         .filter(function(pair) {
           return !has(syncMsg, pair[0]) || syncMsg[pair[0]].hash !== pair[1].hash;
         })
